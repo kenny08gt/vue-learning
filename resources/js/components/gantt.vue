@@ -12,7 +12,7 @@
             <ul id="segments-list" class="list-unstyled">
                 <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"
                     @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut"><span
-                    class="task">{{value.name}}</span>
+                    class="task" :id="'task_'+value.id">{{value.name}}</span>
                 </li>
             </ul>
         </div>
@@ -20,6 +20,7 @@
 </template>
 
 <script>
+    import Draggable from '@shopify/draggable/lib/draggable';
 
     export default {
         name: 'gantt',
@@ -29,7 +30,9 @@
                 days: [],
                 start_date: '',
                 due_date: '',
-                oneDay: 24 * 60 * 60 * 1000 // hours*minutes*seconds*milliseconds
+                oneDay: 24 * 60 * 60 * 1000, // hours*minutes*seconds*milliseconds
+                current_task_x_position: -1,
+                initial_task_x_position: -1
             }
         },
         mounted() {
@@ -54,6 +57,7 @@
 
                 }).then(() => {
                     this.orderTasks();
+                    this.enableDrag();
                 });
             },
             orderTasks() {
@@ -65,8 +69,9 @@
                     const left_margin = (vue_scope.datediff(vue_scope.start_date, task_start_date) + 1) * 45;
                     const width = (vue_scope.datediff(task_start_date, task_due_date) + 1) * 45;
 
-                    $(item).find('.task').css('margin-left', left_margin + 'px');
-                    $(item).find('.task').css('width', width + 'px');
+                    let task = $(item).find('.task');
+                    task.css('margin-left', left_margin + 'px');
+                    task.css('width', width + 'px');
                 });
             },
             datediff(firstDate, secondDate) {
@@ -78,6 +83,27 @@
             },
             taskSegmentHoverOut(event) {
                 event.target.classList.remove('hovered');
+            },
+            enableDrag() {
+                const draggable = new Draggable(document.querySelectorAll("#segments-list li"), {
+                    draggable: 'span'
+                });
+                const vue_scope = this;
+                draggable.on('drag:start', (e,) => {
+                    console.log('start drag', e);
+                });
+                draggable.on('drag:move', (e) => {
+
+                    let clientX = e.data.sensorEvent.data.clientX;
+                    const original_task = $(e.data.originalSource);
+                    original_task.css('margin-left', 'calc('+(clientX - 30) + 'px - 20%)');
+
+                });
+                draggable.on('drag:stop', (e) => {
+                    const task = $(e.data.source);
+                    const original_task = $(e.data.originalSource);
+
+                });
             }
         }
     }
