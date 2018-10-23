@@ -9,20 +9,34 @@
         <div class="segments">
             <ul id="days-list">
             </ul>
+
             <ul id="segments-list" class="list-unstyled">
-                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"
-                    @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut"><span
-                    class="task">{{value.name}}</span>
+                <li v-for="task in tasks" :data-start_date="task.start_date" :data-due_date="task.due_date"
+                    @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut">
+                    <Container @drop="onDrop" orientation="horizontal" lock-axis="x" @drag-start="onDragStart($event)" :get-child-payload="getChildPayload" @drag-end="onDragEnd">
+                        <Draggable :key="task.id">
+                            <span class="task" :id='"task_"+task.id'>{{task.name}}</span>
+                        </Draggable>
+                    </Container>
                 </li>
             </ul>
+            <!--<ul id="segments-list" class="list-unstyled">-->
+            <!--<li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"-->
+            <!--@mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut"><span-->
+            <!--class="task">{{value.name}}</span>-->
+            <!--</li>-->
+            <!--</ul>-->
         </div>
     </div>
 </template>
 
 <script>
+    import {Container, Draggable} from "vue-smooth-dnd";
+    import {applyDrag, generateItems} from "vue-smooth-dnd/src/utils";
 
     export default {
         name: 'gantt',
+        components: {Container, Draggable},
         data() {
             return {
                 tasks: [],
@@ -78,6 +92,22 @@
             },
             taskSegmentHoverOut(event) {
                 event.target.classList.remove('hovered');
+            },
+            onDrop(dropResult) {
+                console.log(dropResult);
+                console.log('drop scrollHeight '+ dropResult.droppedElement.scrollHeight);
+                console.log('drop scrollWidth '+ dropResult.droppedElement.scrollWidth);
+
+                let element = $("#"+ dropResult.droppedElement.id);
+                let rect = element[0].getBoundingClientRect();
+                console.log(rect.top, rect.right, rect.bottom, rect.left);
+                // this.tasks = applyDrag(this.tasks, dropResult);
+            },
+            onDragStart(event){
+            },
+            getChildPayload(index){
+            },
+            onDragEnd(dragResult){
             }
         }
     }
@@ -138,6 +168,14 @@
                     border-right: 0.1px solid black;
                     height: 30px;
                 }
+            }
+        }
+    }
+
+    .smooth-dnd-container.horizontal {
+        & > {
+            .smooth-dnd-draggable-wrapper {
+                width: 100%;
             }
         }
     }
