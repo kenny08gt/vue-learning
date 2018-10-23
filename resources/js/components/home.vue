@@ -23,7 +23,7 @@
     export default {
         data() {
             return {
-                component: list,
+                component: gantt,
             }
         },
         name: 'home',

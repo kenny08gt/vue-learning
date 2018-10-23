@@ -1,20 +1,22 @@
 <template>
-   <div class="gantt-wrapper">
-       <div class="list">
-           <ul id="v-tasks-list" class="list-unstyled text-left">
-               <li><strong>Task</strong></li>
-               <li v-for="(value, key) in tasks">{{value.name}}</li>
-           </ul>
-       </div>
-       <div class="segments">
-           <ul id="days-list">
-           </ul>
-           <ul id="" class="list-unstyled">
-               <li v-for="(value, key) in tasks" :data-start_date="value.start_date"  :data-due-date="value.due_date"
-               class="task">{{value.name}}</li>
-           </ul>
-       </div>
-   </div>
+    <div class="gantt-wrapper">
+        <div class="list">
+            <ul id="v-tasks-list" class="list-unstyled text-left">
+                <li><strong>Task</strong></li>
+                <li v-for="(value, key) in tasks">{{value.name}}</li>
+            </ul>
+        </div>
+        <div class="segments">
+            <ul id="days-list">
+            </ul>
+            <ul id="segments-list" class="list-unstyled">
+                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"
+                    @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut"><span
+                    class="task">{{value.name}}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -24,41 +26,72 @@
         data() {
             return {
                 tasks: [],
-                days: []
+                days: [],
+                start_date: '',
+                due_date: '',
+                oneDay: 24 * 60 * 60 * 1000 // hours*minutes*seconds*milliseconds
             }
         },
         mounted() {
             console.log('Component mounted. gantt');
-            axios.get(window.location.origin + '/api/tasks/gantt').then(({ data }) => {
-                this.tasks = [];
-                data.tasks.forEach(task => {
-                    this.tasks.push(task);
-                });
-                this.days = [];
-                let start_date = new Date(data.start_date);
-                let due_date = new Date(data.due_date);
-                console.log('Start date ', start_date);
-                console.log('Due date ', due_date);
-                let day_container = $("#days-list");
-                for (let d = start_date; d <= due_date; d.setDate(d.getDate() + 1)) {
-                    day_container.append('<li>'+d.getDate()+'/'+(d.getMonth() + 1)+'</li>');
-                    console.log('dar '+d.getDate() + ', month '+d.getMonth());
-                }
-            });
+            this.loadTasks();
         },
         methods: {
-            newTask(){
-                component = 'new-task'
+            loadTasks() {
+                const vue_scope = this;
+                axios.get(window.location.origin + '/api/tasks/gantt').then(({data}) => {
+                    vue_scope.tasks = [];
+                    data.tasks.forEach(task => {
+                        vue_scope.tasks.push(task);
+                    });
+                    vue_scope.days = [];
+                    vue_scope.start_date = new Date(data.start_date);
+                    vue_scope.due_date = new Date(data.due_date);
+                    let day_container = $("#days-list");
+                    for (let d = new Date(vue_scope.start_date.valueOf()); d <= new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay); d.setDate(d.getDate() + 1)) {
+                        day_container.append('<li>' + d.getDate() + '/' + (d.getMonth() + 1) + '</li>');
+                    }
+
+                }).then(() => {
+                    this.orderTasks();
+                });
+            },
+            orderTasks() {
+                console.log('order tasks ');
+                const vue_scope = this;
+                $("#segments-list li").each(function (index, item) {
+                    const task_start_date = new Date($(item).data('start_date'));
+                    const task_due_date = new Date($(item).data('due_date'));
+                    const left_margin = (vue_scope.datediff(vue_scope.start_date, task_start_date) + 1) * 45;
+                    const width = (vue_scope.datediff(task_start_date, task_due_date) + 1) * 45;
+
+                    $(item).find('.task').css('margin-left', left_margin + 'px');
+                    $(item).find('.task').css('width', width + 'px');
+                });
+            },
+            datediff(firstDate, secondDate) {
+
+                return Math.round(Math.abs((firstDate.getTime() - secondDate.getTime()) / (this.oneDay)));
+            },
+            taskSegmentHover(event) {
+                event.target.classList.add('hovered');
+            },
+            taskSegmentHoverOut(event) {
+                event.target.classList.remove('hovered');
             }
         }
-
     }
+
+    $("body").on('hove', '#segments-list li span', function (event) {
+        $(this).css('background', 'red');
+    });
 </script>
 <style lang="scss">
     .gantt-wrapper {
         width: calc(100vw - 45px);
         height: 100vh;
         background-color: #afafaf;
+        position: relative;
         .list {
             width: 20%;
             height: 100%;
@@ -69,9 +102,7 @@
             li {
                 padding: 5px 10px;
                 max-height: 30px;
-                &:hover {
-                    background-color: #E7E7E7;
-                }
+                border-bottom: 1px solid black;
             }
         }
         .segments {
@@ -82,13 +113,19 @@
             top: 0;
             right: 0;
             li {
-                &.task {
+                border-bottom: 1px solid black;
+                .task {
                     background-color: #C1EAFF;
-                    color: #C1EAFF;
+                    color: transparent;
                     border-radius: 5px;
-                    max-height: 28px;
+                    max-height: 25px;
                     padding: 5px 0;
                     margin: 2px 0;
+                    display: block;
+                    cursor: pointer;
+                    &.hovered {
+                        background-color: red;
+                    }
                 }
             }
             #days-list {
@@ -97,7 +134,9 @@
                 padding: 0;
                 margin: 0;
                 li {
-                    width: 30px;
+                    width: 45px;
+                    border-right: 0.1px solid black;
+                    height: 30px;
                 }
             }
         }
