@@ -10,11 +10,37 @@
             <ul id="days-list">
             </ul>
             <ul id="segments-list" class="list-unstyled">
-                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"
-                    @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut"><span
-                    class="task">{{value.name}}</span>
+                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date">
+                    <span @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut" @click="taskSegmentClick"
+                          class="task">{{value.name}}</span>
                 </li>
             </ul>
+        </div>
+
+        <div class="tooltip-wrapper">
+            <span class="fa fa-pencil" @click="editTask"></span>
+            <span class="fa fa-trash" @click="deleteTask"></span>
+        </div>
+        <div class="modal" tabindex="-1" role="dialog" id="editTaskModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Task</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquid animi, aperiam corporis
+                            earum eveniet explicabo fugiat illo in inventore, ipsum iure nostrum rerum similique
+                            sint.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary">Save changes</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -78,13 +104,38 @@
             },
             taskSegmentHoverOut(event) {
                 event.target.classList.remove('hovered');
+            },
+            taskSegmentClick(event) {
+                console.log('event', event);
+                $("#segments-list li span.task .tooltip-wrapper").remove();
+                let segment = $(event.target);
+
+                let tooltip = $(".tooltip-wrapper").clone();
+                tooltip.css('display', 'block');
+                let width = segment.width();
+                let element_width = 68;
+                console.log('element width ' + element_width);
+                console.log('width ' + width);
+                // tooltip.css('top', '-35px');
+                // tooltip.css('left', ((width / 2) - (element_width / 2)));
+                tooltip.css('top', event.layerY - 50);
+                tooltip.css('left', event.layerX - (element_width / 2));
+                segment.prepend(tooltip);
+            },
+            editTask() {
+                alert('Edit task');
+                $("#editTaskModal").modal('show');
+            },
+            deleteTask() {
+                alert('Delete task');
             }
         }
     }
 
-    $("body").on('hove', '#segments-list li span', function (event) {
-        $(this).css('background', 'red');
-    });
+    $('body').on('click', '.tooltip-wrapper .fa-pencil', function (e) {
+        alert('edit pencil click');
+    })
+
 </script>
 <style lang="scss">
     .gantt-wrapper {
@@ -123,6 +174,7 @@
                     margin: 2px 0;
                     display: block;
                     cursor: pointer;
+                    position: relative;
                     &.hovered {
                         background-color: red;
                     }
@@ -134,10 +186,33 @@
                 padding: 0;
                 margin: 0;
                 li {
-                    width: 45px;
+                    min-width: 45px;
                     border-right: 0.1px solid black;
                     height: 30px;
                 }
+            }
+        }
+        .tooltip-wrapper {
+            display: none;
+            background-color: #fbffb8;
+            color: #000;
+            position: absolute;
+            padding: 10px;
+            border-radius: 10px;
+            width: 68px;
+            &:after {
+                content: "";
+                position: absolute;
+                right: 100%;
+                top: 35px;
+                left: 20px;
+                border-top: 13px solid #fbffb8;
+                border-right: 13px solid transparent;
+                border-bottom: 13px solid transparent;
+                border-left: 13px solid transparent;
+            }
+            span {
+                margin: 0 5px;
             }
         }
     }
