@@ -10,9 +10,11 @@
             <ul id="days-list">
             </ul>
             <ul id="segments-list" class="list-unstyled">
-                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date">
+                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"
+                    :key="value.id">
                     <span @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut" @click="taskSegmentClick"
-                          class="task">{{value.name}}</span>
+                          class="task" :data-id="value.id" :data-name="value.name" :data-description="value.description"
+                          :data-start_date="value.start_date" :data-due_date="value.due_date" :id="'task_'+value.id">{{value.name}}</span>
                 </li>
             </ul>
         </div>
@@ -21,7 +23,7 @@
             <span class="fa fa-pencil" @click="editTask"></span>
             <span class="fa fa-trash" @click="deleteTask"></span>
         </div>
-        <div class="modal" tabindex="-1" role="dialog" id="editTaskModal">
+        <div class="modal fade" tabindex="-1" role="dialog" id="editTaskModal">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -31,13 +33,30 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquid animi, aperiam corporis
-                            earum eveniet explicabo fugiat illo in inventore, ipsum iure nostrum rerum similique
-                            sint.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary">Save changes</button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <form action="" class="card-body text-left" v-on:submit.prevent="editTaskForm">
+                            <input type="hidden" name="id" id="id" :value="task_obj.id">
+                            <div class="form-group">
+                                <label for="name">Name</label>
+                                <input type="text" name="name" id="name" class="form-control" v-model="task_obj.name">
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea name="description" id="description" class="form-control"
+                                          v-model="task_obj.description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="start_date">Start date</label>
+                                <input type="date" name="start_date" id="start_date" class="form-control"
+                                       v-model="task_obj.start_date">
+                            </div>
+                            <div class="form-group">
+                                <label for="due_date">Due date</label>
+                                <input type="date" name="due_date" id="due_date" class="form-control"
+                                       v-model="task_obj.due_date">
+                            </div>
+                            <button>Submit</button>
+
+                        </form>
                     </div>
                 </div>
             </div>
@@ -46,7 +65,6 @@
 </template>
 
 <script>
-
     export default {
         name: 'gantt',
         data() {
@@ -55,7 +73,17 @@
                 days: [],
                 start_date: '',
                 due_date: '',
-                oneDay: 24 * 60 * 60 * 1000 // hours*minutes*seconds*milliseconds
+                oneDay: 24 * 60 * 60 * 1000, // hours*minutes*seconds*milliseconds
+                task_obj: [],
+                weekday: [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat"
+                ]
             }
         },
         mounted() {
@@ -64,6 +92,7 @@
         },
         methods: {
             loadTasks() {
+                console.log('load tasks');
                 const vue_scope = this;
                 axios.get(window.location.origin + '/api/tasks/gantt').then(({data}) => {
                     vue_scope.tasks = [];
@@ -75,8 +104,9 @@
                     vue_scope.due_date = new Date(data.due_date);
                     let day_container = $("#days-list");
                     for (let d = new Date(vue_scope.start_date.valueOf()); d <= new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay); d.setDate(d.getDate() + 1)) {
-                        day_container.append('<li>' + d.getDate() + '/' + (d.getMonth() + 1) + '</li>');
+                        day_container.append('<li  data-toggle="tooltip" title="'+d.getDate()+'-'+d.getMonth()+'-'+d.getFullYear()+'">' +  vue_scope.weekday[d.getDay()] +'</li>');
                     }
+                    $('[data-toggle="tooltip"]').tooltip()
 
                 }).then(() => {
                     this.orderTasks();
@@ -106,36 +136,100 @@
                 event.target.classList.remove('hovered');
             },
             taskSegmentClick(event) {
-                console.log('event', event);
-                $("#segments-list li span.task .tooltip-wrapper").remove();
+
+                $("#segments-list li span.task .tooltip-wrapper").css('display', 'none');
                 let segment = $(event.target);
 
-                let tooltip = $(".tooltip-wrapper").clone();
+                if (!segment.is('span.task'))
+                    return;
+
+                let tooltip = $(".tooltip-wrapper");
                 tooltip.css('display', 'block');
                 let width = segment.width();
                 let element_width = 68;
-                console.log('element width ' + element_width);
-                console.log('width ' + width);
-                // tooltip.css('top', '-35px');
-                // tooltip.css('left', ((width / 2) - (element_width / 2)));
                 tooltip.css('top', event.layerY - 50);
                 tooltip.css('left', event.layerX - (element_width / 2));
-                segment.prepend(tooltip);
+
+                try {
+                    segment.prepend(tooltip);
+                }
+                catch (err) {
+                    console.log('error', err);
+                }
             },
-            editTask() {
-                alert('Edit task');
+            editTask(e) {
+
+                let task = $(e.target).parent().parent();
+
+                this.task_obj = {
+                    'id': task.data('id'),
+                    'name': task.data('name'),
+                    'description': task.data('description'),
+                    'start_date': task.data('start_date').substring(0, 10),
+                    'due_date': task.data('due_date').substring(0, 10),
+                };
+
                 $("#editTaskModal").modal('show');
             },
             deleteTask() {
                 alert('Delete task');
+            },
+            getDate(value) {
+                console.log('date ' + value);
+            },
+            editTaskForm() {
+                this.cleanErrorsForm();
+                let vue_scope = this;
+                $.ajax({
+                    url: window.location.origin + '/api/task',
+                    type: 'post',
+                    data: vue_scope.task_obj,
+                    success: function (data) {
+                        Vue.notify({
+                            group: 'notification-template',
+                            title: 'Success',
+                            text: 'Task updated!',
+                            type: 'success',
+                            duration: '3500'
+                        });
+                        let task = $("#task_" + vue_scope.task_obj.id);
+                        let wrapper = task.parent();
+                        task.data('start_date', vue_scope.task_obj.start_date);
+                        task.data('due_date', vue_scope.task_obj.due_date);
+                        wrapper.data('start_date', vue_scope.task_obj.start_date);
+                        wrapper.data('due_date', vue_scope.task_obj.due_date);
+                        vue_scope.orderTasks();
+                        $("#editTaskModal").modal('hide');
+                    },
+                    error: function (error) {
+                        let errors = $.parseJSON(error.responseText);
+                        Vue.notify({
+                            group: 'notification-template',
+                            title: 'Error',
+                            text: errors.message,
+                            type: 'error',
+                            duration: '3500'
+                        });
+                        $.each(errors['errors'], function (key, value) {
+                            console.log('key ' + key);
+                            console.log('value ' + value);
+                            $("#" + key).after('<label class="error">' + value + '</label>');
+
+                        });
+                    }
+                })
+            },
+            cleanErrorsForm() {
+                $("form label.error").each(function (index, item) {
+                    item.remove();
+                })
             }
         }
     }
 
-    $('body').on('click', '.tooltip-wrapper .fa-pencil', function (e) {
-        alert('edit pencil click');
+    $(function () {
+        // $('[data-toggle="tooltip"]').tooltip()
     })
-
 </script>
 <style lang="scss">
     .gantt-wrapper {
@@ -143,11 +237,11 @@
         height: 100vh;
         background-color: #afafaf;
         position: relative;
+        display: flex;
         .list {
-            width: 20%;
             height: 100%;
             background-color: #eeeeee;
-            position: absolute;
+            position: relative;
             left: 0;
             top: 0;
             li {
@@ -155,12 +249,15 @@
                 max-height: 30px;
                 border-bottom: 1px solid black;
             }
+            #v-tasks-list {
+                width: max-content;
+            }
         }
         .segments {
             background-color: #fff;
-            width: 80%;
+            /*min-width: 80%;*/
             height: 100%;
-            position: absolute;
+            position: relative;
             top: 0;
             right: 0;
             li {

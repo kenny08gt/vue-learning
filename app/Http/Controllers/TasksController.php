@@ -17,7 +17,7 @@ class TasksController extends Controller
             'due_date' => 'nullable|date',
         ]);
 
-        Task::create($request->all());
+        Task::updateOrCreate(['id' => $request->get('id')], $request->except('id'));
 
         return response(['payload' => '', 'status' => 'success', 'message' => 'Task created!'], 200);
     }
