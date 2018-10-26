@@ -2,11 +2,14 @@
     <div class="gantt-wrapper">
         <div class="list">
             <ul id="v-tasks-list" class="list-unstyled text-left">
-                <li><strong>Task</strong></li>
+                <li style="height: 45px; border-bottom: transparent;"></li>
+                <li style="height: 45px;"></li>
                 <li v-for="(value, key) in tasks">{{value.name}}</li>
             </ul>
         </div>
         <div class="segments">
+            <ul id="week-list">
+            </ul>
             <ul id="days-list">
             </ul>
             <ul id="segments-list" class="list-unstyled">
@@ -83,6 +86,20 @@
                     "Thu",
                     "Fri",
                     "Sat"
+                ],
+                months: [
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dic"
                 ]
             }
         },
@@ -103,8 +120,35 @@
                     vue_scope.start_date = new Date(data.start_date);
                     vue_scope.due_date = new Date(data.due_date);
                     let day_container = $("#days-list");
-                    for (let d = new Date(vue_scope.start_date.valueOf()); d <= new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay); d.setDate(d.getDate() + 1)) {
-                        day_container.append('<li  data-toggle="tooltip" title="'+d.getDate()+'-'+d.getMonth()+'-'+d.getFullYear()+'">' +  vue_scope.weekday[d.getDay()] +'</li>');
+                    let week_container = $("#week-list");
+                    let day_start = 31;
+                    let day_end = 0;
+                    let days_count = 0;
+
+                    for (let d = new Date(vue_scope.start_date.valueOf());
+                         d <= new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay * 2);
+                         d.setDate(d.getDate() + 1)) {
+                        let current_day_calendar = d.getDate();
+                        let day_week_number = d.getDay();
+                        days_count++;
+                        day_container.append('<li  data-toggle="tooltip" title="'
+                            +current_day_calendar+'-'+ (d.getMonth() + 1) +'-'+d.getFullYear()+'">'
+                            +  vue_scope.weekday[day_week_number] +'</li>');
+                        if(current_day_calendar < day_start)
+                            day_start = current_day_calendar;
+
+                        if(current_day_calendar > day_end)
+                            day_end = current_day_calendar;
+
+                        if(day_week_number === 6 || vue_scope.isLastDay(d)){
+                            week_container.append('<li style="width: calc(45px * '+(days_count)+')">'
+                                + vue_scope.months[d.getMonth()] + ' ' +day_start + ' - '+ day_end +'</li>');
+                            day_start = 31;
+                            day_end = 0;
+                            days_count = 0;
+                        }else if(d ==    new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay * 2)){
+                            console.log('errorororororro');
+                        }
                     }
                     $('[data-toggle="tooltip"]').tooltip()
 
@@ -223,6 +267,11 @@
                 $("form label.error").each(function (index, item) {
                     item.remove();
                 })
+            },
+            isLastDay(dt) {
+                let test = new Date(dt.getTime()), month = test.getMonth();
+                test.setDate(test.getDate() + 1);
+                return test.getMonth() !== month;
             }
         }
     }
@@ -277,7 +326,7 @@
                     }
                 }
             }
-            #days-list {
+            #days-list, #week-list {
                 list-style: none;
                 display: flex;
                 padding: 0;
