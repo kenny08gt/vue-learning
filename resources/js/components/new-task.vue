@@ -68,7 +68,7 @@
                             type: 'success',
                             duration: '3500'
                         });
-                        $("#listBtn").trigger('click');
+                        $("#ganttBtn").trigger('click');
                     },
                     error: function (error) {
                         let errors = $.parseJSON(error.responseText);

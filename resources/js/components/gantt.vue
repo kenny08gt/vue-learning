@@ -283,12 +283,11 @@
 <style lang="scss">
     .gantt-wrapper {
         width: calc(100vw - 45px);
-        height: 100vh;
         background-color: #afafaf;
         position: relative;
         display: flex;
+        overflow-y: auto;
         .list {
-            height: 100%;
             background-color: #eeeeee;
             position: relative;
             left: 0;

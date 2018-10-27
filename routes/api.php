@@ -20,3 +20,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::post('task', 'TasksController@save')->name('tasks.save');
 Route::get('tasks', 'TasksController@get')->name('tasks.get');
 Route::get('tasks/gantt', 'TasksController@getGanttTasks')->name('tasks.get.gantt');
+
+Route::get('pipelines', 'PipelinesController@get')->name('pipelines.get');

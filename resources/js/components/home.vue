@@ -7,8 +7,8 @@
                 </transition>
                 <div class="mt-2">
                     <button v-on:click="component = 'new-task'" class="btn btn-info">New task</button>
-                    <button v-on:click="component = 'list'" id="listBtn" class="btn btn-info">List</button>
                     <button v-on:click="component = 'gantt'" id="ganttBtn" class="btn btn-info">Gantt chart</button>
+                    <button v-on:click="component = 'kanban'" id="kanbanBtn" class="btn btn-info">Kanban chart</button>
                 </div>
             </div>
             <notifications group="notification-template" />
@@ -17,7 +17,7 @@
 </template>
 
 <script>
-    import list from './list'
+    import kanban from './kanban'
     import newTask from './new-task'
     import gantt from './gantt'
     export default {
@@ -40,7 +40,7 @@
             }
         },
         components: {
-            'list': list,
+            'kanban': kanban,
             'new-task': newTask,
             'gantt': gantt,
         }
