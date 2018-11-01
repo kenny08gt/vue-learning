@@ -25,8 +25,16 @@
                                 <input type="date" name="due_date" id="due_date" class="form-control"
                                        v-model="task_obj.due_date">
                             </div>
+                            <div class="form-group">
+                                <label for="pipeline_id">Pipeline</label>
+                                <select name="pipeline_id" id="pipeline_id" class="form-control"
+                                        v-model="task_obj.pipeline_id">
+                                    <option value="null" selected disabled>Please select an option</option>
+                                    <option v-for="pipeline in pipelines" :value="pipeline.id">{{pipeline.name}}
+                                    </option>
+                                </select>
+                            </div>
                             <button>Submit</button>
-
                         </form>
                     </div>
                 </div>
@@ -41,16 +49,31 @@
         name: '',
         description: '',
         start_date: window.now,
-        due_date: window.now
+        due_date: window.now,
+        pipeline_id: ''
     };
     export default {
         name: 'newTask',
         mounted() {
             console.log('Component mounted. new-task');
+            axios.get('/api/pipelines').then(({data}) => {
+                data.pipelines.forEach(pipeline => {
+                    this.pipelines.push(pipeline);
+                });
+            });
+        },
+        activated() {
+            axios.get('/api/pipelines').then(({data}) => {
+                this.pipelines = [];
+                data.pipelines.forEach(pipeline => {
+                    this.pipelines.push(pipeline);
+                });
+            });
         },
         data() {
             return {
-                task_obj
+                task_obj,
+                pipelines: []
             }
         },
         methods: {

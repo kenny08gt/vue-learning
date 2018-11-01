@@ -1,10 +1,10 @@
 <template>
     <div class="card-scene">
         <Container
-                orientation="horizontal"
-                @drop="onColumnDrop($event)"
-                drag-handle-selector=".column-drag-handle"
-                @drag-start="dragStart"
+            orientation="horizontal"
+            @drop="onColumnDrop($event)"
+            drag-handle-selector=".column-drag-handle"
+            @drag-start="dragStart"
         >
             <Draggable v-for="column in scene.children" :key="column.id">
                 <div :class="column.props.className">
@@ -13,27 +13,29 @@
                         {{ column.name }}
                     </div>
                     <Container
-                            group-name="col"
-                            @drop="(e) => onCardDrop(column.id, e)"
-                            :get-child-payload="getCardPayload(column.id)"
-                            drag-class="card-ghost"
-                            drop-class="card-ghost-drop"
+                        group-name="col"
+                        @drop="(e) => onCardDrop(column.id, e)"
+                        :get-child-payload="getCardPayload(column.id)"
+                        drag-class="card-ghost"
+                        drop-class="card-ghost-drop"
                     >
                         <Draggable v-for="card in column.children" :key="card.id">
                             <div :class="card.props.className" :style="card.props.style">
-                                <p>{{ card.data }}</p>
+                                <p @click="taskClick" :data-id="card.props.id">{{ card.data }}</p>
                             </div>
                         </Draggable>
                     </Container>
                 </div>
             </Draggable>
         </Container>
+        <edit-task-modal :task_obj="this.task_obj" v-on:success_callback="successEditTask($event)"></edit-task-modal>
     </div>
 </template>
 
 <script>
-    import { Container, Draggable } from 'vue-smooth-dnd'
-    import { applyDrag } from './helpers'
+    import {Container, Draggable} from 'vue-smooth-dnd'
+    import {applyDrag} from './helpers'
+    import editTaskModal from './edit-task-modal'
 
     const scene = {
         type: 'container',
@@ -44,10 +46,15 @@
     };
     export default {
         name: 'Cards',
-        components: {Container, Draggable},
-        data () {
+        components: {
+            Container,
+            Draggable,
+            'edit-task-modal': editTaskModal,
+        },
+        data() {
             return {
-                scene
+                scene,
+                task_obj: {}
             }
         },
         mounted() {
@@ -59,28 +66,32 @@
                 console.log('load tasks');
                 const vue_scope = this;
                 axios.get(window.location.origin + '/api/pipelines/').then(({data}) => {
+                    vue_scope.scene.children = [];
                     data.pipelines.forEach(pipeline => {
                         let new_pipeline = {
-                            id: 'pipeline_'+pipeline.id,
+                            id: 'pipeline_' + pipeline.id,
                             type: 'container',
-                            name: pipeline.name,
+                            name: pipeline.name + ' ' + pipeline.id,
                             props: {
+                                id: pipeline.id,
                                 orientation: 'vertical',
                                 className: 'card-container'
                             },
                         };
                         new_pipeline.children = [];
                         pipeline.tasks.forEach(task => {
-                           new_pipeline.children.push({
-                               type: 'draggable',
-                               id: 'task_'+task.id,
-                               props: {
-                                   id: task.id,
-                                   className: 'card',
-                                   style: {backgroundColor: 'white'}
-                               },
-                               data: task.name
-                           });
+                            new_pipeline.children.push({
+                                type: 'draggable',
+                                id: 'task_' + task.id,
+                                props: {
+                                    id: task.id,
+                                    name: task.name,
+                                    category_id: pipeline.id,
+                                    className: 'card',
+                                    style: {backgroundColor: 'white'}
+                                },
+                                data: task.name
+                            });
                         });
 
                         vue_scope.scene.children.push(new_pipeline);
@@ -91,12 +102,12 @@
 
                 });
             },
-            onColumnDrop (dropResult) {
+            onColumnDrop(dropResult) {
                 const scene = Object.assign({}, this.scene);
                 scene.children = applyDrag(scene.children, dropResult);
                 this.scene = scene
             },
-            onCardDrop (columnId, dropResult) {
+            onCardDrop(columnId, dropResult) {
                 if (dropResult.removedIndex !== null || dropResult.addedIndex !== null) {
                     const scene = Object.assign({}, this.scene);
                     const column = scene.children.filter(p => p.id === columnId)[0];
@@ -104,24 +115,83 @@
                     const newColumn = Object.assign({}, column);
                     newColumn.children = applyDrag(newColumn.children, dropResult);
                     scene.children.splice(columnIndex, 1, newColumn);
-                    console.log('columnIndex',columnIndex);
-                    console.log('new column',newColumn);
-                    console.log('drop result ',dropResult);
+                    console.log('column id ' + newColumn.props.id);
+                    console.log('props ', dropResult);
+
+                    if (dropResult.removedIndex !== null) {
+                        console.log('if removedIndex');
+                        let task = dropResult.payload.props;
+                        this.saveTaskPipelineChange({
+                            'id': task.id,
+                            'name': task.name
+                        });
+                    }
+
+                    if (dropResult.addedIndex !== null) {
+                        console.log('if addedIndex');
+                        let task = dropResult.payload.props;
+                        let data = {
+                            'id': task.id,
+                            'pipeline_position': dropResult.addedIndex,
+                            'name': task.name,
+                            'pipeline_id': newColumn.props.id,
+                        };
+                        console.log('data',data);
+                        this.saveTaskPipelineChange(data);
+                    }
+
                     this.scene = scene;
                 }
             },
-            getCardPayload (columnId) {
+            getCardPayload(columnId) {
                 return index => {
                     return this.scene.children.filter(p => p.id === columnId)[0].children[index]
                 }
             },
-            dragStart () {
+            dragStart() {
 
             },
-            log (...params) {
+            log(...params) {
                 console.log(...params)
+            },
+            saveTaskPipelineChange(data) {
+                axios.post('/api/task/', data).then(function (response) {
+                    console.log(response);
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            },
+            taskClick(event) {
+
+                let task_el = $(event.target);
+                let task_id = task_el.data('id');
+                if (task_id === undefined)
+                    return;
+
+                axios.get('/api/tasks/' + task_id).then(({data}) => {
+                    if (Object.keys(data.payload).length > 0) {
+
+                        this.task_obj = {
+                            'id': data.payload.id,
+                            'name': data.payload.name,
+                            'description': data.payload.description,
+                            'start_date': data.payload.start_date.substring(0, 10),
+                            'due_date': data.payload.due_date.substring(0, 10),
+                        };
+                    } else {
+                        console.log('not payload at all');
+                    }
+                });
+
+                $("#editTaskModal").modal('show');
+            },
+            successEditTask(task) {
+                console.log('success edit task', task);
+                this.loadTasks();
+                // alert('success task');
+
             }
-        }
+        },
     }
 </script>
 <style lang="scss">

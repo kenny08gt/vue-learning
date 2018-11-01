@@ -19,6 +19,7 @@ class CreateTableTask extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->unsignedInteger('pipeline_id')->nullable();
+            $table->unsignedInteger('pipeline_position')->nullable();
             $table->timestamp('start_date')->nullable();
             $table->timestamp('due_date')->nullable();
             $table->timestamps();

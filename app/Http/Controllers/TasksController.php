@@ -15,16 +15,26 @@ class TasksController extends Controller
             'description' => 'nullable|max:255',
             'start_date' => 'nullable|date',
             'due_date' => 'nullable|date',
+            'pipeline_id' => 'nullable|int',
+            'pipeline_position' => 'nullable|int'
         ]);
 
-        Task::updateOrCreate(['id' => $request->get('id')], $request->except('id'));
+        $task = Task::updateOrCreate(['id' => $request->get('id')], $request->except('id'));
 
-        return response(['payload' => '', 'status' => 'success', 'message' => 'Task created!'], 200);
+        return response(['payload' => $task, 'status' => 'success', 'message' => 'Task created!'], 200);
     }
 
-    public function get(Request $request)
+    public function get(Request $request, $id = null)
     {
-        return response(['payload' => Task::all()], 200);
+        try{
+            if($id)
+                return response(['payload' => collect(Task::findOrFail($id))], 200);
+            else
+                return response(['payload' => Task::all()], 200);
+
+        }catch(\Exception $exception){
+            return response(['error' => $exception->getMessage(), 'trace' => $exception->getTraceAsString()], 500);
+        }
     }
 
     public function getGanttTasks(Request $request)

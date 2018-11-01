@@ -20,6 +20,7 @@
     import kanban from './kanban'
     import newTask from './new-task'
     import gantt from './gantt'
+    import editTaskModal from './edit-task-modal'
     export default {
         data() {
             return {
@@ -43,6 +44,7 @@
             'kanban': kanban,
             'new-task': newTask,
             'gantt': gantt,
+            'edit-task-modal': editTaskModal,
         }
     }
 </script>

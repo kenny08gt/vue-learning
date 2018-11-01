@@ -26,48 +26,13 @@
             <span class="fa fa-pencil" @click="editTask"></span>
             <span class="fa fa-trash" @click="deleteTask"></span>
         </div>
-        <div class="modal fade" tabindex="-1" role="dialog" id="editTaskModal">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Task</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form action="" class="card-body text-left" v-on:submit.prevent="editTaskForm">
-                            <input type="hidden" name="id" id="id" :value="task_obj.id">
-                            <div class="form-group">
-                                <label for="name">Name</label>
-                                <input type="text" name="name" id="name" class="form-control" v-model="task_obj.name">
-                            </div>
-                            <div class="form-group">
-                                <label for="description">Description</label>
-                                <textarea name="description" id="description" class="form-control"
-                                          v-model="task_obj.description"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="start_date">Start date</label>
-                                <input type="date" name="start_date" id="start_date" class="form-control"
-                                       v-model="task_obj.start_date">
-                            </div>
-                            <div class="form-group">
-                                <label for="due_date">Due date</label>
-                                <input type="date" name="due_date" id="due_date" class="form-control"
-                                       v-model="task_obj.due_date">
-                            </div>
-                            <button>Submit</button>
-
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <edit-task-modal :task_obj="this.task_obj" v-on:success_callback="loadTasks()"></edit-task-modal>
     </div>
 </template>
 
 <script>
+
+    import editTaskModal from './edit-task-modal'
     export default {
         name: 'gantt',
         data() {
@@ -77,7 +42,7 @@
                 start_date: '',
                 due_date: '',
                 oneDay: 24 * 60 * 60 * 1000, // hours*minutes*seconds*milliseconds
-                task_obj: [],
+                task_obj: {},
                 weekday: [
                     "Sun",
                     "Mon",
@@ -221,48 +186,6 @@
             getDate(value) {
                 console.log('date ' + value);
             },
-            editTaskForm() {
-                this.cleanErrorsForm();
-                let vue_scope = this;
-                $.ajax({
-                    url: window.location.origin + '/api/task',
-                    type: 'post',
-                    data: vue_scope.task_obj,
-                    success: function (data) {
-                        Vue.notify({
-                            group: 'notification-template',
-                            title: 'Success',
-                            text: 'Task updated!',
-                            type: 'success',
-                            duration: '3500'
-                        });
-                        let task = $("#task_" + vue_scope.task_obj.id);
-                        let wrapper = task.parent();
-                        task.data('start_date', vue_scope.task_obj.start_date);
-                        task.data('due_date', vue_scope.task_obj.due_date);
-                        wrapper.data('start_date', vue_scope.task_obj.start_date);
-                        wrapper.data('due_date', vue_scope.task_obj.due_date);
-                        vue_scope.orderTasks();
-                        $("#editTaskModal").modal('hide');
-                    },
-                    error: function (error) {
-                        let errors = $.parseJSON(error.responseText);
-                        Vue.notify({
-                            group: 'notification-template',
-                            title: 'Error',
-                            text: errors.message,
-                            type: 'error',
-                            duration: '3500'
-                        });
-                        $.each(errors['errors'], function (key, value) {
-                            console.log('key ' + key);
-                            console.log('value ' + value);
-                            $("#" + key).after('<label class="error">' + value + '</label>');
-
-                        });
-                    }
-                })
-            },
             cleanErrorsForm() {
                 $("form label.error").each(function (index, item) {
                     item.remove();
@@ -273,6 +196,9 @@
                 test.setDate(test.getDate() + 1);
                 return test.getMonth() !== month;
             }
+        },
+        components: {
+            'edit-task-modal': editTaskModal,
         }
     }
 

@@ -20,6 +20,7 @@ class TasksTableSeeder extends Seeder
                 'name' => $faker->catchPhrase,
                 'description' => $faker->text,
                 'pipeline_id' => $faker->randomElement([1, 2, 3, 4, 5]),
+                'pipeline_position' => '',
                 'start_date' => $start_date,
                 'due_date' => $due_date->addDays(random_int(5, 15)),
                 'created_at' => now(),
