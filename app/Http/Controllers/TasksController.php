@@ -19,20 +19,30 @@ class TasksController extends Controller
             'pipeline_position' => 'nullable|int'
         ]);
 
+        if ($request->has('pipeline_position') && $request->has('pipeline_id')) {
+            DB::statement('update tasks set pipeline_position = pipeline_position + 1 where pipeline_id = ? and pipeline_position >= ?', array($request->pipeline_id, $request->pipeline_position));
+        }
+
         $task = Task::updateOrCreate(['id' => $request->get('id')], $request->except('id'));
+
+        if (!$request->has('pipeline_position') && !$request->has('id')) {
+            $count = DB::select("select count(*) as count from tasks where pipeline_id = " . $task->pipeline_id);
+            $task->pipeline_position = $count[0]->count;
+            $task->save();
+        }
 
         return response(['payload' => $task, 'status' => 'success', 'message' => 'Task created!'], 200);
     }
 
     public function get(Request $request, $id = null)
     {
-        try{
-            if($id)
+        try {
+            if ($id)
                 return response(['payload' => collect(Task::findOrFail($id))], 200);
             else
                 return response(['payload' => Task::all()], 200);
 
-        }catch(\Exception $exception){
+        } catch (\Exception $exception) {
             return response(['error' => $exception->getMessage(), 'trace' => $exception->getTraceAsString()], 500);
         }
     }

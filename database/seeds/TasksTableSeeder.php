@@ -16,11 +16,13 @@ class TasksTableSeeder extends Seeder
         for ($i = 0; $i < 50; $i++){
             $start_date = '2018-'.$months[random_int(0, 2)].'-'.$days[random_int(0,17)];
             $due_date = new \Carbon\Carbon($start_date);
+            $pipeline_id = $faker->randomElement([1, 2, 3, 4, 5]);
+            $count =DB::select("select count(*) as count from tasks where pipeline_id = ".$pipeline_id);
             DB::table('tasks')->insert([
                 'name' => $faker->catchPhrase,
                 'description' => $faker->text,
-                'pipeline_id' => $faker->randomElement([1, 2, 3, 4, 5]),
-                'pipeline_position' => '',
+                'pipeline_id' => $pipeline_id,
+                'pipeline_position' => $count[0]->count,
                 'start_date' => $start_date,
                 'due_date' => $due_date->addDays(random_int(5, 15)),
                 'created_at' => now(),

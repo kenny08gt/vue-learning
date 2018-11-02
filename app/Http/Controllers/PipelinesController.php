@@ -10,7 +10,7 @@ class PipelinesController extends Controller
     public function get(Request $request)
     {
         $pipelines = Pipeline::with(['tasks' => function ($query) {
-            $query->orderBy('pipeline_position', 'desc');
+            $query->orderBy('pipeline_position', 'asc');
         }])->get();
 
         return response(['pipelines' => $pipelines], 200);
