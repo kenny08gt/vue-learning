@@ -13,12 +13,7 @@
             <ul id="days-list">
             </ul>
             <ul id="segments-list" class="list-unstyled">
-                <li v-for="(value, key) in tasks" :data-start_date="value.start_date" :data-due_date="value.due_date"
-                    :key="value.id">
-                    <span @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut" @click="taskSegmentClick"
-                          class="task" :data-id="value.id" :data-name="value.name" :data-description="value.description"
-                          :data-start_date="value.start_date" :data-due_date="value.due_date" :id="'task_'+value.id">{{value.name}}</span>
-                </li>
+                <gantt-segment v-for="(task, key) in tasks" :task="task" :key="key"></gantt-segment>
             </ul>
         </div>
 
@@ -33,6 +28,7 @@
 <script>
 
     import editTaskModal from './edit-task-modal'
+    import ganttSegment from './gantt-segment'
     export default {
         name: 'gantt',
         data() {
@@ -130,7 +126,7 @@
                     const left_margin = (vue_scope.datediff(vue_scope.start_date, task_start_date) + 1) * 45;
                     const width = (vue_scope.datediff(task_start_date, task_due_date) + 1) * 45;
 
-                    $(item).find('.task').css('margin-left', left_margin + 'px');
+                    $(item).find('.task').prev().css('margin-left', left_margin + 'px');
                     $(item).find('.task').css('width', width + 'px');
                 });
             },
@@ -138,34 +134,7 @@
 
                 return Math.round(Math.abs((firstDate.getTime() - secondDate.getTime()) / (this.oneDay)));
             },
-            taskSegmentHover(event) {
-                event.target.classList.add('hovered');
-            },
-            taskSegmentHoverOut(event) {
-                event.target.classList.remove('hovered');
-            },
-            taskSegmentClick(event) {
 
-                $("#segments-list li span.task .tooltip-wrapper").css('display', 'none');
-                let segment = $(event.target);
-
-                if (!segment.is('span.task'))
-                    return;
-
-                let tooltip = $(".tooltip-wrapper");
-                tooltip.css('display', 'block');
-                let width = segment.width();
-                let element_width = 68;
-                tooltip.css('top', event.layerY - 50);
-                tooltip.css('left', event.layerX - (element_width / 2));
-
-                try {
-                    segment.prepend(tooltip);
-                }
-                catch (err) {
-                    console.log('error', err);
-                }
-            },
             editTask(e) {
 
                 let task = $(e.target).parent().parent();
@@ -199,6 +168,7 @@
         },
         components: {
             'edit-task-modal': editTaskModal,
+            'gantt-segment': ganttSegment,
         }
     }
 
@@ -249,6 +219,10 @@
                     &.hovered {
                         background-color: red;
                     }
+                }
+                .gripper-left, .gripper-right {
+                    width: 3px;
+                    cursor: ew-resize;
                 }
             }
             #days-list, #week-list {
