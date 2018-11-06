@@ -26,9 +26,11 @@
 </template>
 
 <script>
-
+    import interact from 'interactjs'
     import editTaskModal from './edit-task-modal'
     import ganttSegment from './gantt-segment'
+
+    let start_date;
     export default {
         name: 'gantt',
         data() {
@@ -80,6 +82,9 @@
                     vue_scope.days = [];
                     vue_scope.start_date = new Date(data.start_date);
                     vue_scope.due_date = new Date(data.due_date);
+
+                    start_date = vue_scope.start_date;
+
                     let day_container = $("#days-list");
                     let week_container = $("#week-list");
                     let day_start = 31;
@@ -93,21 +98,21 @@
                         let day_week_number = d.getDay();
                         days_count++;
                         day_container.append('<li  data-toggle="tooltip" title="'
-                            +current_day_calendar+'-'+ (d.getMonth() + 1) +'-'+d.getFullYear()+'">'
-                            +  vue_scope.weekday[day_week_number] +'</li>');
-                        if(current_day_calendar < day_start)
+                            + current_day_calendar + '-' + (d.getMonth() + 1) + '-' + d.getFullYear() + '">'
+                            + vue_scope.weekday[day_week_number] + '</li>');
+                        if (current_day_calendar < day_start)
                             day_start = current_day_calendar;
 
-                        if(current_day_calendar > day_end)
+                        if (current_day_calendar > day_end)
                             day_end = current_day_calendar;
 
-                        if(day_week_number === 6 || vue_scope.isLastDay(d)){
-                            week_container.append('<li style="width: calc(45px * '+(days_count)+')">'
-                                + vue_scope.months[d.getMonth()] + ' ' +day_start + ' - '+ day_end +'</li>');
+                        if (day_week_number === 6 || vue_scope.isLastDay(d)) {
+                            week_container.append('<li style="width: calc(45px * ' + (days_count) + ')">'
+                                + vue_scope.months[d.getMonth()] + ' ' + day_start + ' - ' + day_end + '</li>');
                             day_start = 31;
                             day_end = 0;
                             days_count = 0;
-                        }else if(d ==    new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay * 2)){
+                        } else if (d == new Date(vue_scope.due_date.valueOf() + vue_scope.oneDay * 2)) {
                             console.log('errorororororro');
                         }
                     }
@@ -126,8 +131,11 @@
                     const left_margin = (vue_scope.datediff(vue_scope.start_date, task_start_date) + 1) * 45;
                     const width = (vue_scope.datediff(task_start_date, task_due_date) + 1) * 45;
 
-                    $(item).find('.task').prev().css('margin-left', left_margin + 'px');
-                    $(item).find('.task').css('width', width + 'px');
+                    let task = $(item).find('.task');
+
+                    task.attr('data-x', left_margin);
+                    task.css({"transform": "translate(" + left_margin + "px, 0px)"});
+                    task.css('width', width + 'px');
                 });
             },
             datediff(firstDate, secondDate) {
@@ -173,7 +181,115 @@
     }
 
     $(function () {
-        // $('[data-toggle="tooltip"]').tooltip()
+        interact('.resize-drag')
+            .draggable({
+                onmove: window.dragMoveListener,
+                restrict: {
+                    restriction: 'parent',
+                    elementRect: {top: 0, left: 0, bottom: 1, right: 1}
+                },
+            })
+            .resizable({
+                // resize from all edges and corners
+                edges: {left: true, right: true, bottom: true, top: true},
+
+                // keep the edges inside the parent
+                restrictEdges: {
+                    outer: 'parent',
+                    endOnly: true,
+                },
+
+                // minimum size
+                restrictSize: {
+                    min: {width: 100, height: 50},
+                },
+
+                inertia: true,
+            })
+            .on('resizemove', function (event) {
+                var target = event.target,
+                    x = (parseFloat(target.getAttribute('data-x')) || 0),
+                    y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+                // update the element's style
+                target.style.width = event.rect.width + 'px';
+                target.style.height = event.rect.height + 'px';
+
+                // translate when resizing from top or left edges
+                x += event.deltaRect.left;
+                y += event.deltaRect.top;
+
+                target.style.webkitTransform = target.style.transform =
+                    'translate(' + x + 'px,' + y + 'px)';
+
+                target.setAttribute('data-x', x);
+                target.setAttribute('data-y', y);
+                target.textContent = Math.round(event.rect.width) + '\u00D7' + Math.round(event.rect.height);
+                // console.log('movement ' + x);
+            })
+            .on('resizeend', function (event) {
+
+                let target = event.target;
+                let x = $(target).data('x');
+                x = Math.round(x / 45);
+                target.style.webkitTransform = target.style.transform = 'translate(' + (x * 45) + 'px, 0px)';
+
+                target.setAttribute('data-x', x * 45);
+
+                let width = $(target).css('width');
+                width = width.replace('px', '');
+                width = Math.round(width / 45);
+                $(target).css('width', width * 45);
+
+                let task_obj = {};
+                task_obj.id = $(target).data('id');
+                task_obj.name = $(target).data('name');
+                task_obj.start_date = (new Date(start_date.getTime())).addDays(Math.round(x) - 1);
+                task_obj.due_date = (new Date(task_obj.start_date.getTime())).addDays(Math.round(width) - 1);
+
+                task_obj.start_date = (task_obj.start_date.toISOString()).substring(0, 10);
+                task_obj.due_date = (task_obj.due_date.toISOString()).substring(0, 10);
+
+                $.ajax({
+                    url: window.location.origin + '/api/task',
+                    type: 'post',
+                    data: task_obj,
+                    success: function (data) {
+                        Vue.notify({
+                            group: 'notification-template',
+                            title: 'Success',
+                            text: 'Task updated!',
+                            type: 'success',
+                            duration: '3500'
+                        });
+                        $(target).attr('data-start_date', task_obj.start_date);
+                        $(target).attr('data-due_date', task_obj.due_date);
+                    },
+                    error: function (error) {
+                        let errors = $.parseJSON(error.responseText);
+                        Vue.notify({
+                            group: 'notification-template',
+                            title: 'Error',
+                            text: errors.message,
+                            type: 'error',
+                            duration: '3500'
+                        });
+                        $.each(errors['errors'], function (key, value) {
+                            console.log('key ' + key);
+                            console.log('value ' + value);
+                            Vue.notify({
+                                group: 'notification-template',
+                                title: 'Error',
+                                text: value,
+                                type: 'error',
+                                duration: '3500'
+                            });
+
+                        });
+                    }
+                })
+
+            });
     })
 </script>
 <style lang="scss">
@@ -214,7 +330,7 @@
                     padding: 5px 0;
                     margin: 2px 0;
                     display: block;
-                    cursor: pointer;
+                    /*cursor: pointer;*/
                     position: relative;
                     &.hovered {
                         background-color: red;

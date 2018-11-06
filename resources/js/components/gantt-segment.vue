@@ -1,13 +1,11 @@
 <template>
     <li :data-start_date="task.start_date" :data-due_date="task.due_date"
-        :key="task.id">
+        :key="task.id" class="resize-container">
         <div class="d-flex">
-            <div class="gripper-left"></div>
             <div @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut" @click="taskSegmentClick"
-                 class="task" :data-id="task.id" :data-name="task.name" :data-description="task.description"
+                 class="task resize-drag" :data-id="task.id" :data-name="task.name" :data-description="task.description"
                  :data-start_date="task.start_date" :data-due_date="task.due_date" :id="'task_'+task.id">{{task.name}}
             </div>
-            <div class="gripper-right"></div>
         </div>
     </li>
 </template>

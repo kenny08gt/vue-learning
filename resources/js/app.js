@@ -16,6 +16,12 @@ Vue.component('home', require('./components/home.vue'));
 
 Vue.use(Notifications);
 
+Date.prototype.addDays = function(days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
+
 const app = new Vue({
     el: '#app'
 });
