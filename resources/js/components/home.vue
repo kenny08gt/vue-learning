@@ -1,7 +1,7 @@
 <template>
     <div class="container-fluid">
         <div class="row justify-content-center">
-            <div class="col-md-12">
+            <div class="col-md-12 p-0">
                 <transition name="slide-fade" mode="out-in">
                     <component v-bind:is="component"></component>
                 </transition>

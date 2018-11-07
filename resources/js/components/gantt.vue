@@ -2,7 +2,10 @@
     <div class="gantt-wrapper">
         <div class="list">
             <ul id="v-tasks-list" class="list-unstyled text-left">
-                <li style="height: 45px; border-bottom: transparent;"></li>
+                <li style="height: 45px; border-bottom: transparent;">
+                    <button class="btn btn-outline-info float-right btn-pin" v-on:click="pinTaskList"><i
+                        class="fa fa-unlock"></i></button>
+                </li>
                 <li style="height: 45px;"></li>
                 <li v-for="(value, key) in tasks">{{value.name}}</li>
             </ul>
@@ -137,12 +140,12 @@
                     task.css({"transform": "translate(" + left_margin + "px, 0px)"});
                     task.css('width', width + 'px');
                 });
+                this.addScrollListener();
             },
             datediff(firstDate, secondDate) {
 
                 return Math.round(Math.abs((firstDate.getTime() - secondDate.getTime()) / (this.oneDay)));
             },
-
             editTask(e) {
 
                 let task = $(e.target).parent().parent();
@@ -172,11 +175,76 @@
                 let test = new Date(dt.getTime()), month = test.getMonth();
                 test.setDate(test.getDate() + 1);
                 return test.getMonth() !== month;
+            },
+            pinTaskList(event) {
+                $(".gantt-wrapper").toggleClass('fixed');
+
+                if ($(".gantt-wrapper").hasClass('fixed')) {
+                    $(".gantt-wrapper").find('.btn-pin i').removeClass('fa-unlock').addClass('fa-lock');
+                } else {
+                    $(".gantt-wrapper").find('.btn-pin i').removeClass('fa-lock').addClass('fa-unlock');
+                    $(".list").css('top', 0);
+                }
+            },
+            addScrollListener() {
+                let vue_scope = this;
+                $('body').on('appear', '#week-list', function (event, $all_appeared_elements) {
+                    // this element is now inside browser viewport
+                    console.log('appear');
+                    vue_scope.daysListAppear();
+                });
+                $('body').on('disappear', '#week-list', function (event, $all_disappeared_elements) {
+                    // this element is now outside browser viewport
+                    console.log('disappear');
+                    vue_scope.daysListDisappear();
+                });
+
+                $("#week-list").appear();
+
+
+                console.log('scroll');
+            },
+            handleScrollBody(event) {
+                if ($(".gantt-wrapper").hasClass('fixed')) {
+                    $(".list").css('top', -window.pageYOffset + 38);
+                }
+                if ($('#week-list-clone').length > 0) {
+                    let left = parseInt(-window.scrollX) + parseInt($('.list').css('width'));
+                    $('#week-list-clone').css('left', left);
+                    $('#days-list-clone').css('left', left);
+                }
+            },
+            daysListDisappear() {
+
+                let left = parseInt(-window.scrollX) + parseInt($('.list').css('width'));
+                $("#week-list")
+                    .clone()
+                    .attr('id', 'week-list-clone')
+                    .css('position', 'fixed')
+                    .css('left', left)
+                    .appendTo('body');
+                $("#days-list")
+                    .clone()
+                    .attr('id', 'days-list-clone')
+                    .css('position', 'fixed')
+                    .css('left', left)
+                    .appendTo('body');
+            },
+            daysListAppear() {
+                $("#week-list-clone").remove();
+                $("#days-list-clone").remove();
             }
         },
         components: {
             'edit-task-modal': editTaskModal,
             'gantt-segment': ganttSegment,
+        },
+        created() {
+            window.addEventListener('scroll', this.handleScrollBody);
+
+        },
+        destroyed() {
+            this.daysListAppear();
         }
     }
 
@@ -191,7 +259,7 @@
             })
             .resizable({
                 // resize from all edges and corners
-                edges: {left: true, right: true, bottom: true, top: true},
+                edges: {left: true, right: true, bottom: false, top: false},
 
                 // keep the edges inside the parent
                 restrictEdges: {
@@ -201,7 +269,7 @@
 
                 // minimum size
                 restrictSize: {
-                    min: {width: 100, height: 50},
+                    min: {width: 45, height: 50},
                 },
 
                 inertia: true,
@@ -210,6 +278,9 @@
                 var target = event.target,
                     x = (parseFloat(target.getAttribute('data-x')) || 0),
                     y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+                if (y != 0)
+                    return;
 
                 // update the element's style
                 target.style.width = event.rect.width + 'px';
@@ -290,7 +361,7 @@
                 })
 
             });
-    })
+    });
 </script>
 <style lang="scss">
     .gantt-wrapper {
@@ -298,7 +369,17 @@
         background-color: #afafaf;
         position: relative;
         display: flex;
-        overflow-y: auto;
+        /*overflow-y: auto;*/
+        &.fixed {
+            .list {
+                position: fixed;
+                top: 38px;
+                z-index: 2;
+            }
+            .segments {
+                margin-left: 390px;
+            }
+        }
         .list {
             background-color: #eeeeee;
             position: relative;
@@ -376,5 +457,25 @@
                 margin: 0 5px;
             }
         }
+    }
+
+    #week-list-clone, #days-list-clone {
+        list-style: none;
+        display: flex;
+        padding: 0;
+        margin: 0;
+        top: 0;
+        background: white;
+        z-index: 1;
+        li {
+            min-width: 45px;
+            border-right: 0.1px solid black;
+            border-bottom: 1px solid black;
+            height: 30px;
+        }
+    }
+
+    #days-list-clone {
+        top: 30px;
     }
 </style>

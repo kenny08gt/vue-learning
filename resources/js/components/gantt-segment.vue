@@ -41,7 +41,7 @@
                 let width = segment.width();
                 let element_width = 68;
                 tooltip.css('top', event.layerY - 50);
-                tooltip.css('left', event.layerX - (element_width / 2));
+                tooltip.css('left', event.layerX - (element_width / 2) - segment.data('x'));
 
                 try {
                     segment.prepend(tooltip);
