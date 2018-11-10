@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Tasks\Task;
+use App\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,18 +17,25 @@ class TasksController extends Controller
             'start_date' => 'nullable|date',
             'due_date' => 'nullable|date',
             'pipeline_id' => 'nullable|int',
-            'pipeline_position' => 'nullable|int'
+            'pipeline_position' => 'nullable|int',
+            'user_id' => 'nullable|int'
         ]);
 
         if ($request->has('pipeline_position') && $request->has('pipeline_id')) {
             DB::statement('update tasks set pipeline_position = pipeline_position + 1 where pipeline_id = ? and pipeline_position >= ?', array($request->pipeline_id, $request->pipeline_position));
         }
 
-        $task = Task::updateOrCreate(['id' => $request->get('id')], $request->except('id'));
+        $task = Task::updateOrCreate(['id' => $request->get('id')], $request->except(['id', 'user_id']));
 
         if (!$request->has('pipeline_position') && !$request->has('id')) {
             $count = DB::select("select count(*) as count from tasks where pipeline_id = " . $task->pipeline_id);
             $task->pipeline_position = $count[0]->count;
+            $task->save();
+        }
+
+        if ($request->has('user_id')) {
+            $user = User::findOrFail($request->get('user_id'));
+            $task->users()->attach($user);
             $task->save();
         }
 
@@ -38,7 +46,7 @@ class TasksController extends Controller
     {
         try {
             if ($id)
-                return response(['payload' => collect(Task::findOrFail($id))], 200);
+                return response(['payload' => collect(Task::where('id', $id)->with('users')->first())], 200);
             else
                 return response(['payload' => Task::all()], 200);
 
@@ -49,7 +57,7 @@ class TasksController extends Controller
 
     public function getGanttTasks(Request $request)
     {
-        $tasks = Task::whereNotNull('start_date')->whereNotNull('due_date')->get();
+        $tasks = Task::whereNotNull('start_date')->whereNotNull('due_date')->with('users')->with('pipeline')->get();
         $start_date = DB::table('tasks')
             ->select('start_date')
             ->whereNotNull('start_date')

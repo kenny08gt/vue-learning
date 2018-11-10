@@ -23,3 +23,5 @@ Route::get('tasks/gantt', 'TasksController@getGanttTasks')->name('tasks.get.gant
 Route::get('tasks/{id?}', 'TasksController@get')->name('tasks.get');
 
 Route::get('pipelines', 'PipelinesController@get')->name('pipelines.get');
+
+Route::get('users', 'UsersController@get')->name('users.get');

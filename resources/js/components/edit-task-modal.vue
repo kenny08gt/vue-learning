@@ -30,6 +30,24 @@
                             <input type="date" name="due_date" id="due_date" class="form-control"
                                    v-model="task_obj.due_date">
                         </div>
+
+                        <div class="form-group">
+                            <label for="pipeline_id">Pipeline</label>
+                            <select name="pipeline_id" id="pipeline_id" class="form-control"
+                                    v-model="task_obj.pipeline_id">
+                                <option value="null" selected disabled>Please select an option</option>
+                                <option v-for="pipeline in pipelines" :value="pipeline.id">{{pipeline.name}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="user_id">Assign</label>
+                            <select name="user_id" id="user_id" class="form-control" v-model="task_obj.user_id">
+                                <option value="null" selected disabled>Please select an option</option>
+                                <option v-for="user in users" :value="user.id">{{user.name}}
+                                </option>
+                            </select>
+                        </div>
                         <button>Submit</button>
 
                     </form>
@@ -44,11 +62,28 @@
         name: 'edit-task-modal',
         data: function () {
             return {
-                count: 0
+                count: 0,
+                pipelines,
+                users
             }
         },
         props: {
             task_obj: {},
+        },
+        mounted() {
+              // load pipelines and users
+            axios.get('/api/pipelines').then(({data}) => {
+                this.pipelines = [];
+                data.pipelines.forEach(pipeline => {
+                    this.pipelines.push(pipeline);
+                });
+            });
+            axios.get('/api/users').then(({data}) => {
+                this.users = [];
+                data.users.forEach(pipeline => {
+                    this.users.push(pipeline);
+                });
+            });
         },
         methods: {
             editTaskForm() {

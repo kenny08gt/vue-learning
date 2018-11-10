@@ -13,4 +13,9 @@ class Task extends Model
     {
         return $this->belongsTo('App\Pipelines\Pipeline','pipeline_id','id', '');
     }
+
+    public function users()
+    {
+        return $this->belongsToMany('App\Users\User', 'user_tasks', 'task_id', 'user_id');
+    }
 }

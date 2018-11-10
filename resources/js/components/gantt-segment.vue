@@ -4,7 +4,11 @@
         <div class="d-flex">
             <div @mouseover="taskSegmentHover" @mouseout="taskSegmentHoverOut" @click="taskSegmentClick"
                  class="task resize-drag" :data-id="task.id" :data-name="task.name" :data-description="task.description"
-                 :data-start_date="task.start_date" :data-due_date="task.due_date" :id="'task_'+task.id">{{task.name}}
+                 :data-start_date="task.start_date" :data-due_date="task.due_date" :id="'task_'+task.id">
+                <div class="profile-pic" :style="'background-image: url('+task.users[0].profile_picture+')'"
+                     data-toggle="tooltip" :title="task.users[0].name">
+                </div>
+                {{task.name}}
             </div>
         </div>
     </li>

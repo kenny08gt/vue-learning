@@ -119,9 +119,10 @@
                             console.log('errorororororro');
                         }
                     }
-                    $('[data-toggle="tooltip"]').tooltip()
 
                 }).then(() => {
+
+                    $('[data-toggle="tooltip"]').tooltip()
                     this.orderTasks();
                 });
             },
@@ -181,28 +182,25 @@
 
                 if ($(".gantt-wrapper").hasClass('fixed')) {
                     $(".gantt-wrapper").find('.btn-pin i').removeClass('fa-unlock').addClass('fa-lock');
+                    $(".gantt-wrapper.fixed .segments").css('margin-left', $(".list").css('width'));
                 } else {
                     $(".gantt-wrapper").find('.btn-pin i').removeClass('fa-lock').addClass('fa-unlock');
                     $(".list").css('top', 0);
+                    $(".gantt-wrapper .segments").css('margin-left', 0);
                 }
             },
             addScrollListener() {
                 let vue_scope = this;
                 $('body').on('appear', '#week-list', function (event, $all_appeared_elements) {
                     // this element is now inside browser viewport
-                    console.log('appear');
                     vue_scope.daysListAppear();
                 });
                 $('body').on('disappear', '#week-list', function (event, $all_disappeared_elements) {
                     // this element is now outside browser viewport
-                    console.log('disappear');
                     vue_scope.daysListDisappear();
                 });
 
                 $("#week-list").appear();
-
-
-                console.log('scroll');
             },
             handleScrollBody(event) {
                 if ($(".gantt-wrapper").hasClass('fixed')) {
@@ -377,7 +375,7 @@
                 z-index: 2;
             }
             .segments {
-                margin-left: 390px;
+
             }
         }
         .list {
@@ -414,7 +412,18 @@
                     /*cursor: pointer;*/
                     position: relative;
                     &.hovered {
-                        background-color: red;
+                        background-color: #9ADEFF;
+                    }
+                    .profile-pic {
+                        width: 15px;
+                        height: 15px;
+                        background-origin: center center;
+                        -webkit-background-size: cover;
+                        background-size: cover;
+                        -webkit-border-radius: 3px;
+                        -moz-border-radius: 3px;
+                        border-radius: 10px;
+                        margin-left: 5px;
                     }
                 }
                 .gripper-left, .gripper-right {

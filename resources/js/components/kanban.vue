@@ -4,8 +4,7 @@
             orientation="horizontal"
             @drop="onColumnDrop($event)"
             drag-handle-selector=".column-drag-handle"
-            @drag-start="dragStart"
-        >
+            @drag-start="dragStart">
             <Draggable v-for="column in scene.children" :key="column.id">
                 <div :class="column.props.className">
                     <div class="card-column-header">
@@ -21,7 +20,16 @@
                     >
                         <Draggable v-for="card in column.children" :key="card.id">
                             <div :class="card.props.className" :style="card.props.style">
-                                <p @click="taskClick" :data-id="card.props.id">{{ card.data }}</p>
+                                <div class="d-flex">
+                                    <div class="left">
+                                        <div class="profile-pic" :style="'background-image: url('+card.props.user.profile_picture+')'"
+                                             data-toggle="tooltip" :title="card.props.user.name">
+                                        </div>
+                                    </div>
+                                    <div class="right">
+                                        <p @click="taskClick" :data-id="card.props.id">{{ card.data }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </Draggable>
                     </Container>
@@ -88,7 +96,11 @@
                                     name: task.name,
                                     category_id: pipeline.id,
                                     className: 'card',
-                                    style: {backgroundColor: 'white'}
+                                    style: {backgroundColor: 'white'},
+                                    user: {
+                                        name: task.users[0].name,
+                                        profile_picture: task.users[0].profile_picture
+                                    }
                                 },
                                 data: task.name
                             });
@@ -99,7 +111,7 @@
 
 
                 }).then(() => {
-
+                    $('[data-toggle="tooltip"]').tooltip()
                 });
             },
             onColumnDrop(dropResult) {
@@ -177,7 +189,10 @@
                             'description': data.payload.description,
                             'start_date': data.payload.start_date.substring(0, 10),
                             'due_date': data.payload.due_date.substring(0, 10),
+                            'pipeline_id': data.payload.pipeline_id,
+                            'user_id': data.payload.users[0].id
                         };
+                        console.log('task obj '+this.task_obj);
                     } else {
                         console.log('not payload at all');
                     }
@@ -247,6 +262,19 @@
         background-color: white;
         box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12), 0 1px 1px rgba(0, 0, 0, 0.24);
         padding: 5px;
+        .left {
+            margin-right: 5px;
+            .profile-pic {
+                width: 50px;
+                height: 50px;
+                background-origin: center center;
+                -webkit-background-size: cover;
+                background-size: cover;
+                -webkit-border-radius: 3px;
+                -moz-border-radius: 3px;
+                border-radius: 3px;
+            }
+        }
     }
 
     .card-column-header {

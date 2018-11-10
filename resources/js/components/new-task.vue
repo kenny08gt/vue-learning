@@ -34,6 +34,14 @@
                                     </option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label for="user_id">Assign</label>
+                                <select name="user_id" id="user_id" class="form-control" v-model="task_obj.user_id">
+                                    <option value="null" selected disabled>Please select an option</option>
+                                    <option v-for="user in users" :value="user.id">{{user.name}}
+                                    </option>
+                                </select>
+                            </div>
                             <button>Submit</button>
                         </form>
                     </div>
@@ -56,9 +64,21 @@
         name: 'newTask',
         mounted() {
             console.log('Component mounted. new-task');
+            // axios.get('/api/pipelines').then(({data}) => {
+            //     data.pipelines.forEach(pipeline => {
+            //         this.pipelines.push(pipeline);
+            //     });
+            // });
             axios.get('/api/pipelines').then(({data}) => {
+                this.pipelines = [];
                 data.pipelines.forEach(pipeline => {
                     this.pipelines.push(pipeline);
+                });
+            });
+            axios.get('/api/users').then(({data}) => {
+                this.users = [];
+                data.users.forEach(pipeline => {
+                    this.users.push(pipeline);
                 });
             });
         },
@@ -69,11 +89,18 @@
                     this.pipelines.push(pipeline);
                 });
             });
+            axios.get('/api/users').then(({data}) => {
+                this.users = [];
+                data.users.forEach(pipeline => {
+                    this.users.push(pipeline);
+                });
+            });
         },
         data() {
             return {
                 task_obj,
-                pipelines: []
+                pipelines: [],
+                users: []
             }
         },
         methods: {

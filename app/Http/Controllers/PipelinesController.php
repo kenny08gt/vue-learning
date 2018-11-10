@@ -11,6 +11,7 @@ class PipelinesController extends Controller
     {
         $pipelines = Pipeline::with(['tasks' => function ($query) {
             $query->orderBy('pipeline_position', 'asc');
+            $query->with('users');
         }])->get();
 
         return response(['pipelines' => $pipelines], 200);
