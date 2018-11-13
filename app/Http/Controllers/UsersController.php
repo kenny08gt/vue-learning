@@ -9,7 +9,7 @@ class UsersController extends Controller
 {
     public function get()
     {
-        $users = User::all();
+        $users = User::with('tasks')->get();
 
         return response(['users' => $users], 200);
     }

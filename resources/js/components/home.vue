@@ -3,15 +3,17 @@
         <div class="row justify-content-center">
             <div class="col-md-12 p-0">
                 <transition name="slide-fade" mode="out-in">
-                    <component v-bind:is="component"></component>
+                    <component v-bind:is="component" v-on:users_tasks="showUserTasks($event)" :data-filter_user_id="filter_user_id"></component>
                 </transition>
                 <div class="mt-2">
+                    <button v-on:click="component = 'list';filter_user_id=0;" class="btn btn-info">Tasks</button>
                     <button v-on:click="component = 'new-task'" class="btn btn-info">New task</button>
                     <button v-on:click="component = 'gantt'" id="ganttBtn" class="btn btn-info">Gantt chart</button>
                     <button v-on:click="component = 'kanban'" id="kanbanBtn" class="btn btn-info">Kanban chart</button>
+                    <button v-on:click="component = 'users'" id="usersBtn" class="btn btn-info">Users</button>
                 </div>
             </div>
-            <notifications group="notification-template" />
+            <notifications group="notification-template"/>
         </div>
     </div>
 </template>
@@ -21,10 +23,14 @@
     import newTask from './new-task'
     import gantt from './gantt'
     import editTaskModal from './edit-task-modal'
+    import users from './users'
+    import list from './list'
+
     export default {
         data() {
             return {
-                component: gantt,
+                component: list,
+                filter_user_id: 0
             }
         },
         name: 'home',
@@ -32,12 +38,17 @@
             console.log('Component mounted. home')
         },
         methods: {
-            showNotification(){
+            showNotification() {
                 Vue.notify({
                     group: 'notification-template',
                     title: 'Important message',
                     text: 'Hello user! This is a notification!'
                 })
+            },
+            showUserTasks(user_id) {
+                this.filter_user_id = user_id;
+                this.component = 'list';
+
             }
         },
         components: {
@@ -45,6 +56,8 @@
             'new-task': newTask,
             'gantt': gantt,
             'edit-task-modal': editTaskModal,
+            'users': users,
+            'list': list,
         }
     }
 </script>

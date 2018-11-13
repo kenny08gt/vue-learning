@@ -45,10 +45,25 @@ class TasksController extends Controller
     public function get(Request $request, $id = null)
     {
         try {
-            if ($id)
-                return response(['payload' => collect(Task::where('id', $id)->with('users')->first())], 200);
-            else
-                return response(['payload' => Task::all()], 200);
+            $user_id = $request->get('user_id');
+            if ($id) {
+                if($user_id){
+                    $task = Task::where('id', $id)->with(['users' => function ($query) use ($user_id) {
+                        $query->where('users.id', $user_id);
+                    }])->first();
+                }else{
+                    $task = Task::where('id', $id)->with('users')->first();
+                }
+                return response(['payload' => collect($task)], 200);
+            } else {
+                if($user_id){
+                    $tasks = Task::join('user_tasks','tasks.id','=','user_tasks.task_id')
+                        ->where('user_tasks.user_id',$user_id)->with('users')->get();
+                }else{
+                    $tasks = Task::with('users')->get();
+                }
+                return response(['payload' => $tasks, 'user_id' => $user_id], 200);
+            }
 
         } catch (\Exception $exception) {
             return response(['error' => $exception->getMessage(), 'trace' => $exception->getTraceAsString()], 500);
