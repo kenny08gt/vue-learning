@@ -63,8 +63,8 @@
         data: function () {
             return {
                 count: 0,
-                pipelines,
-                users
+                pipelines: {},
+                users: {}
             }
         },
         props: {

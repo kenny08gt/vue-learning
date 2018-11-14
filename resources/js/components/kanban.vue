@@ -1,5 +1,5 @@
 <template>
-    <div class="card-scene">
+    <div class="card-scene component-wrapper">
         <Container
             orientation="horizontal"
             @drop="onColumnDrop($event)"
@@ -73,7 +73,14 @@
             loadTasks() {
                 console.log('load tasks');
                 const vue_scope = this;
-                axios.get(window.location.origin + '/api/pipelines/').then(({data}) => {
+                this.filter_user_id = $(".component-wrapper").data('filter_user_id');
+                let url = '';
+                if (this.filter_user_id > 0)
+                    url = window.location.origin + '/api/pipelines/?user_id=' + this.filter_user_id;
+                else
+                    url = window.location.origin + '/api/pipelines/';
+
+                axios.get(url).then(({data}) => {
                     vue_scope.scene.children = [];
                     data.pipelines.forEach(pipeline => {
                         let new_pipeline = {

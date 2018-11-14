@@ -47,19 +47,21 @@ class TasksController extends Controller
         try {
             $user_id = $request->get('user_id');
             if ($id) {
-                if($user_id){
-                    $task = Task::where('id', $id)->with(['users' => function ($query) use ($user_id) {
-                        $query->where('users.id', $user_id);
-                    }])->first();
-                }else{
+                if ($user_id) {
+                    $task = Task::join('user_tasks', 'tasks.id', '=', 'user_tasks.task_id')
+                        ->where('user_tasks.user_id', $user_id)
+                        ->where('tasks.id', $id)
+                        ->with('users')
+                        ->first();
+                } else {
                     $task = Task::where('id', $id)->with('users')->first();
                 }
                 return response(['payload' => collect($task)], 200);
             } else {
-                if($user_id){
-                    $tasks = Task::join('user_tasks','tasks.id','=','user_tasks.task_id')
-                        ->where('user_tasks.user_id',$user_id)->with('users')->get();
-                }else{
+                if ($user_id) {
+                    $tasks = Task::join('user_tasks', 'tasks.id', '=', 'user_tasks.task_id')
+                        ->where('user_tasks.user_id', $user_id)->with('users')->get();
+                } else {
                     $tasks = Task::with('users')->get();
                 }
                 return response(['payload' => $tasks, 'user_id' => $user_id], 200);
@@ -72,21 +74,54 @@ class TasksController extends Controller
 
     public function getGanttTasks(Request $request)
     {
-        $tasks = Task::whereNotNull('start_date')->whereNotNull('due_date')->with('users')->with('pipeline')->get();
-        $start_date = DB::table('tasks')
-            ->select('start_date')
-            ->whereNotNull('start_date')
-            ->whereNotNull('due_date')
-            ->orderBy('start_date', 'asc')
-            ->limit(1)
-            ->get();
-        $due_date = DB::table('tasks')
-            ->select('due_date')
-            ->whereNotNull('start_date')
-            ->whereNotNull('due_date')
-            ->orderBy('due_date', 'desc')
-            ->limit(1)
-            ->get();
+        $user_id = $request->get('user_id');
+        if ($user_id) {
+            $tasks = Task::join('user_tasks', 'tasks.id', '=', 'user_tasks.task_id')
+                ->where('user_tasks.user_id', $user_id)
+                ->whereNotNull('start_date')
+                ->whereNotNull('due_date')
+                ->with('pipeline')
+                ->with('users')
+                ->get();
+            $start_date = DB::table('tasks')
+                ->join('user_tasks', 'tasks.id', '=', 'user_tasks.task_id')
+                ->where('user_tasks.user_id', $user_id)
+                ->select('start_date')
+                ->whereNotNull('start_date')
+                ->whereNotNull('due_date')
+                ->orderBy('start_date', 'asc')
+                ->limit(1)
+                ->get();
+            $due_date = DB::table('tasks')
+                ->join('user_tasks', 'tasks.id', '=', 'user_tasks.task_id')
+                ->where('user_tasks.user_id', $user_id)
+                ->select('due_date')
+                ->whereNotNull('start_date')
+                ->whereNotNull('due_date')
+                ->orderBy('due_date', 'desc')
+                ->limit(1)
+                ->get();
+        } else {
+            $tasks = Task::whereNotNull('start_date')
+                ->whereNotNull('due_date')
+                ->with('users')
+                ->with('pipeline')
+                ->get();
+            $start_date = DB::table('tasks')
+                ->select('start_date')
+                ->whereNotNull('start_date')
+                ->whereNotNull('due_date')
+                ->orderBy('start_date', 'asc')
+                ->limit(1)
+                ->get();
+            $due_date = DB::table('tasks')
+                ->select('due_date')
+                ->whereNotNull('start_date')
+                ->whereNotNull('due_date')
+                ->orderBy('due_date', 'desc')
+                ->limit(1)
+                ->get();
+        }
 
         $start_date = count($start_date) > 0 ? date('D M d Y H:i:s O', strtotime($start_date[0]->start_date)) : '';
         $due_date = count($due_date) > 0 ? date('D M d Y H:i:s O', strtotime($due_date[0]->due_date)) : '';

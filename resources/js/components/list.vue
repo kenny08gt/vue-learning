@@ -30,21 +30,17 @@
             else
                 url = window.location.origin + '/api/tasks';
 
-            // this.getTasks();
+            if(!this.last_update){
+                this.getTasks();
+                this.last_update = true;
+            }
         },
         updated() {
+            console.log('updated');
             if(this.last_update){
                 this.last_update = false;
                 return;
             }
-
-            this.filter_user_id = $(".component-wrapper").data('filter_user_id');
-            console.log('updated list '+this.filter_user_id);
-            let url = '';
-            if (this.filter_user_id > 0)
-                url = window.location.origin + '/api/tasks?user_id=' + this.filter_user_id;
-            else
-                url = window.location.origin + '/api/tasks';
 
             this.getTasks();
             this.last_update = true;
@@ -54,6 +50,13 @@
                 component = 'new-task'
             },
             getTasks(){
+                this.filter_user_id = $(".component-wrapper").data('filter_user_id');
+                let url = '';
+                if (this.filter_user_id > 0)
+                    url = window.location.origin + '/api/tasks?user_id=' + this.filter_user_id;
+                else
+                    url = window.location.origin + '/api/tasks';
+
                 axios.get(url).then(({data}) => {
                     this.tasks = [];
                     data.payload.forEach(task => {

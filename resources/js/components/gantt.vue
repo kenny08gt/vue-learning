@@ -1,5 +1,5 @@
 <template>
-    <div class="gantt-wrapper">
+    <div class="gantt-wrapper component-wrapper">
         <div class="list">
             <ul id="v-tasks-list" class="list-unstyled text-left">
                 <li style="height: 45px; border-bottom: transparent;">
@@ -77,7 +77,15 @@
             loadTasks() {
                 console.log('load tasks');
                 const vue_scope = this;
-                axios.get(window.location.origin + '/api/tasks/gantt').then(({data}) => {
+
+                this.filter_user_id = $(".component-wrapper").data('filter_user_id');
+                let url = '';
+                if (this.filter_user_id > 0)
+                    url = window.location.origin + '/api/tasks/gantt?user_id=' + this.filter_user_id;
+                else
+                    url = window.location.origin + '/api/tasks/gantt';
+
+                axios.get(url).then(({data}) => {
                     vue_scope.tasks = [];
                     data.tasks.forEach(task => {
                         vue_scope.tasks.push(task);
