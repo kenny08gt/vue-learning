@@ -1,31 +1,59 @@
 <template>
-    <div class="gantt-wrapper component-wrapper">
-        <div class="list">
-            <ul id="v-tasks-list" class="list-unstyled text-left">
-                <li style="height: 45px; border-bottom: transparent;">
-                    <button class="btn btn-outline-info float-right btn-pin" v-on:click="pinTaskList"><i
-                        class="fa fa-unlock"></i></button>
-                </li>
-                <li style="height: 45px;"></li>
-                <li v-for="(value, key) in tasks">{{value.name}}</li>
-            </ul>
-        </div>
-        <div class="segments">
-            <ul id="week-list">
-            </ul>
-            <ul id="days-list">
-            </ul>
-            <ul id="segments-list" class="list-unstyled">
-                <gantt-segment v-for="(task, key) in tasks" :task="task" :key="key"></gantt-segment>
-            </ul>
-        </div>
+    <div class="component-wrapper">
+        <div class="filters-wrapper text-left ml-4">
+            <h2>Filters</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="user_filter">User</label>
+                        <select name="user_filter" id="user_filter" class="form-control" v-on:change="userFilterChange">
+                            <option value="null" selected disabled>Please select an option</option>
+                            <option v-for="user in users" :value="user.id">{{user.name}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
 
-        <div class="tooltip-wrapper">
-            <span class="fa fa-pencil" @click="editTask"></span>
-            <span class="fa fa-trash" @click="deleteTask"></span>
+                    <div class="form-group">
+                        <label for="pipeline">Pipeline</label>
+                        <select name="pipeline" id="pipeline" class="form-control">
+                            <option value="null" selected disabled>Please select an option</option>
+                            <option v-for="pipeline in pipelines" :value="pipeline.id">{{pipeline.name}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
         </div>
-        <edit-task-modal :task_obj="this.task_obj" v-on:success_callback="loadTasks()"></edit-task-modal>
+        <div class="gantt-wrapper">
+
+            <div class="list">
+                <ul id="v-tasks-list" class="list-unstyled text-left">
+                    <li style="height: 45px; border-bottom: transparent;">
+                        <button class="btn btn-outline-info float-right btn-pin" v-on:click="pinTaskList"><i
+                            class="fa fa-unlock"></i></button>
+                    </li>
+                    <li style="height: 45px;"></li>
+                    <li v-for="(value, key) in tasks">{{value.name}}</li>
+                </ul>
+            </div>
+            <div class="segments">
+                <ul id="week-list">
+                </ul>
+                <ul id="days-list">
+                </ul>
+                <ul id="segments-list" class="list-unstyled">
+                    <gantt-segment v-for="(task, key) in tasks" :task="task" :key="key"></gantt-segment>
+                </ul>
+            </div>
+
+            <div class="tooltip-wrapper">
+                <span class="fa fa-pencil" @click="editTask"></span>
+                <span class="fa fa-trash" @click="deleteTask"></span>
+            </div>
+            <edit-task-modal :task_obj="this.task_obj" v-on:success_callback="loadTasks()"></edit-task-modal>
+        </div>
     </div>
+
 </template>
 
 <script>
@@ -66,12 +94,17 @@
                     "Oct",
                     "Nov",
                     "Dic"
-                ]
+                ],
+                users: {},
+                pipelines: {},
+                filter_user_id: 0
             }
         },
         mounted() {
             console.log('Component mounted. gantt');
             this.loadTasks();
+            this.loadUsers();
+            this.loadPipelines();
         },
         methods: {
             loadTasks() {
@@ -129,9 +162,25 @@
                     }
 
                 }).then(() => {
-
                     $('[data-toggle="tooltip"]').tooltip()
                     this.orderTasks();
+                });
+            },
+            loadPipelines() {
+                let url = window.location.origin + '/api/pipelines/';
+                axios.get(url).then(({data}) => {
+                    this.pipelines = [];
+                    data.pipelines.forEach(pipeline => {
+                        this.pipelines.push(pipeline);
+                    })
+                });
+            },
+            loadUsers() {
+                axios.get(window.location.origin + '/api/users').then(({data}) => {
+                    this.users = [];
+                    data.users.forEach(user => {
+                        this.users.push(user);
+                    });
                 });
             },
             orderTasks() {
@@ -239,6 +288,14 @@
             daysListAppear() {
                 $("#week-list-clone").remove();
                 $("#days-list-clone").remove();
+            },
+            userFilterChange(event) {
+                let target = event.target;
+
+                $(".component-wrapper").data('filter_user_id', $(target).val());
+
+                this.tasks = [];
+                this.loadTasks();
             }
         },
         components: {
