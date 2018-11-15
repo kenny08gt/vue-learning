@@ -1,5 +1,19 @@
 <template>
     <div class="card-scene component-wrapper">
+        <div class="filters-wrapper text-left ml-4">
+            <h2>Filters</h2>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="user_filter">User</label>
+                        <select name="user_filter" id="user_filter" class="form-control" v-on:change="userFilterChange">
+                            <option value="0" selected>All</option>
+                            <option v-for="user in users" :value="user.id">{{user.name}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
         <Container
             orientation="horizontal"
             @drop="onColumnDrop($event)"
@@ -22,7 +36,8 @@
                             <div :class="card.props.className" :style="card.props.style">
                                 <div class="d-flex">
                                     <div class="left">
-                                        <div class="profile-pic" :style="'background-image: url('+card.props.user.profile_picture+')'"
+                                        <div class="profile-pic"
+                                             :style="'background-image: url('+card.props.user.profile_picture+')'"
                                              data-toggle="tooltip" :title="card.props.user.name">
                                         </div>
                                     </div>
@@ -62,27 +77,30 @@
         data() {
             return {
                 scene,
-                task_obj: {}
+                task_obj: {},
+                users: {},
+                pipelines: {},
+                filter_user_id: 0,
+                filter_pipeline_id: 0
             }
         },
         mounted() {
             console.log('Component mounted. kanban');
             this.loadTasks();
+            this.loadUsers();
         },
         methods: {
             loadTasks() {
                 console.log('load tasks');
                 const vue_scope = this;
-                this.filter_user_id = $(".component-wrapper").data('filter_user_id');
-                let url = '';
-                if (this.filter_user_id > 0)
-                    url = window.location.origin + '/api/pipelines/?user_id=' + this.filter_user_id;
-                else
-                    url = window.location.origin + '/api/pipelines/';
+
+                let url = this.prepareTasksUrl();
 
                 axios.get(url).then(({data}) => {
                     vue_scope.scene.children = [];
+                    vue_scope.pipelines = [];
                     data.pipelines.forEach(pipeline => {
+                        vue_scope.pipelines.push(pipeline);
                         let new_pipeline = {
                             id: 'pipeline_' + pipeline.id,
                             type: 'container',
@@ -121,6 +139,35 @@
                     $('[data-toggle="tooltip"]').tooltip()
                 });
             },
+            prepareTasksUrl() {
+
+                let componentWrapper = $(".component-wrapper");
+                this.filter_user_id = componentWrapper.data('filter_user_id');
+                let url = '';
+                if (this.filter_user_id > 0)
+                    url = window.location.origin + '/api/pipelines?user_id=' + this.filter_user_id;
+                else
+                    url = window.location.origin + '/api/pipelines/';
+
+                this.filter_pipeline_id = componentWrapper.data('filter_pipeline_id');
+
+                if (this.filter_pipeline_id > 0) {
+                    if (url.includes('?'))
+                        url += '&pipeline_id=' + this.filter_pipeline_id;
+                    else
+                        url += '?pipeline_id=' + this.filter_pipeline_id;
+                }
+
+                return url;
+            },
+            loadUsers() {
+                axios.get(window.location.origin + '/api/users').then(({data}) => {
+                    this.users = [];
+                    data.users.forEach(user => {
+                        this.users.push(user);
+                    });
+                });
+            },
             onColumnDrop(dropResult) {
                 const scene = Object.assign({}, this.scene);
                 scene.children = applyDrag(scene.children, dropResult);
@@ -155,7 +202,7 @@
                             'name': task.name,
                             'pipeline_id': newColumn.props.id,
                         };
-                        console.log('data',data);
+                        console.log('data', data);
                         this.saveTaskPipelineChange(data);
                     }
 
@@ -199,7 +246,7 @@
                             'pipeline_id': data.payload.pipeline_id,
                             'user_id': data.payload.users[0].id
                         };
-                        console.log('task obj '+this.task_obj);
+                        console.log('task obj ' + this.task_obj);
                     } else {
                         console.log('not payload at all');
                     }
@@ -208,10 +255,15 @@
                 $("#editTaskModal").modal('show');
             },
             successEditTask(task) {
-                console.log('success edit task', task);
                 this.loadTasks();
-                // alert('success task');
+            },
+            userFilterChange(event) {
+                let target = event.target;
 
+                $(".component-wrapper").data('filter_user_id', $(target).val());
+
+                this.tasks = [];
+                this.loadTasks();
             }
         },
     }

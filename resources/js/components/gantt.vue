@@ -16,7 +16,7 @@
 
                     <div class="form-group">
                         <label for="pipeline">Pipeline</label>
-                        <select name="pipeline" id="pipeline" class="form-control">
+                        <select name="pipeline" id="pipeline" class="form-control" v-on:change="pipelineFilterChange">
                             <option value="null" selected disabled>Please select an option</option>
                             <option v-for="pipeline in pipelines" :value="pipeline.id">{{pipeline.name}}</option>
                         </select>
@@ -97,7 +97,8 @@
                 ],
                 users: {},
                 pipelines: {},
-                filter_user_id: 0
+                filter_user_id: 0,
+                filter_pipeline_id: 0
             }
         },
         mounted() {
@@ -111,12 +112,7 @@
                 console.log('load tasks');
                 const vue_scope = this;
 
-                this.filter_user_id = $(".component-wrapper").data('filter_user_id');
-                let url = '';
-                if (this.filter_user_id > 0)
-                    url = window.location.origin + '/api/tasks/gantt?user_id=' + this.filter_user_id;
-                else
-                    url = window.location.origin + '/api/tasks/gantt';
+                let url = this.prepareTasksUrl();
 
                 axios.get(url).then(({data}) => {
                     vue_scope.tasks = [];
@@ -162,9 +158,30 @@
                     }
 
                 }).then(() => {
-                    $('[data-toggle="tooltip"]').tooltip()
+                    $('[data-toggle="tooltip"]').tooltip();
                     this.orderTasks();
                 });
+            },
+            prepareTasksUrl() {
+
+                let componentWrapper = $(".component-wrapper");
+                this.filter_user_id = componentWrapper.data('filter_user_id');
+                let url = '';
+                if (this.filter_user_id > 0)
+                    url = window.location.origin + '/api/tasks/gantt?user_id=' + this.filter_user_id;
+                else
+                    url = window.location.origin + '/api/tasks/gantt';
+
+                this.filter_pipeline_id = componentWrapper.data('filter_pipeline_id');
+
+                if (this.filter_pipeline_id > 0) {
+                    if (url.includes('?'))
+                        url += '&pipeline_id=' + this.filter_pipeline_id;
+                    else
+                        url += '?pipeline_id=' + this.filter_pipeline_id;
+                }
+
+                return url;
             },
             loadPipelines() {
                 let url = window.location.origin + '/api/pipelines/';
@@ -293,6 +310,14 @@
                 let target = event.target;
 
                 $(".component-wrapper").data('filter_user_id', $(target).val());
+
+                this.tasks = [];
+                this.loadTasks();
+            },
+            pipelineFilterChange(event) {
+                let target = event.target;
+
+                $(".component-wrapper").data('filter_pipeline_id', $(target).val());
 
                 this.tasks = [];
                 this.loadTasks();
